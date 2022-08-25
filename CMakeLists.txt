@@ -178,13 +178,9 @@ else()
   set( ZLIB_LIBRARIES "" )
 endif( ZLIB_FOUND )
 
-# This will become unnecessary once we update to websocketpp which fixes upstream issue #395
-add_definitions(-DWEBSOCKETPP_STRICT_MASKING -DBOOST_ASIO_HAS_STD_CHRONO)
-
 target_include_directories(fc
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${OPENSSL_INCLUDE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/websocketpp
   )
 
 # try and make this very clear that this json parser is intended only for webauthn parsing..
