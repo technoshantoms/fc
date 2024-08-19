@@ -1,5 +1,4 @@
 #include <fc/thread/thread.hpp>
-#include <fc/string.hpp>
 #include <fc/time.hpp>
 #include <boost/thread.hpp>
 #include "context.hpp"
@@ -46,16 +45,24 @@ namespace fc {
 #endif
             { 
               static boost::atomic<int> cnt(0);
-              name = fc::string("th_") + char('a'+cnt++); 
+              name = std::string("th_") + char('a'+cnt++); 
 //              printf("thread=%p\n",this);
             }
 
             ~thread_d()
             {
               delete current;
+              current = nullptr;
               fc::context* temp;
               for (fc::context* ready_context : ready_heap)
-                delete ready_context;
+              {
+                  if (ready_context->cur_task)
+                  {
+                     ready_context->cur_task->release();
+                     ready_context->cur_task = nullptr;
+                  }
+                  delete ready_context;
+              }
               ready_heap.clear();
               while (blocked)
               {
@@ -93,7 +100,7 @@ namespace fc {
            std::vector<fc::context*>       free_list;      // list of unused contexts that are ready for deletion
 
            bool                     done;
-           fc::string               name;
+           std::string               name;
            fc::context*             current;     // the currently-executing task in this thread
 
            fc::context*             pt_head;     // list of contexts that can be reused for new tasks
@@ -117,7 +124,7 @@ namespace fc {
 #endif
 
 #if 0
-           void debug( const fc::string& s ) {
+           void debug( const std::string& s ) {
           return;
               //boost::unique_lock<boost::mutex> lock(log_mutex());
 
@@ -328,7 +335,7 @@ namespace fc {
                  if( (*task_itr)->canceled() )
                  {
                     (*task_itr)->run();
-                    (*task_itr)->release();
+                    (*task_itr)->release(); // HERE BE DRAGONS
                     task_itr = task_sch_queue.erase(task_itr);
                     canceled_task = true;
                     continue;
@@ -525,9 +532,9 @@ namespace fc {
               next->_set_active_context( current );
               current->cur_task = next;
               next->run();
-              current->cur_task = 0;
-              next->_set_active_context(0);
-              next->release();
+              current->cur_task = nullptr;
+              next->_set_active_context(nullptr);
+              next->release(); // HERE BE DRAGONS
               current->reinitialize();
            }
 
