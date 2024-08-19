@@ -1,7 +1,7 @@
 #!/bin/sh
 
-if [ "$#" != 1 ]; then
-    echo "Usage: $0 <boost-unit-test-executable>" 1>&2
+if [ "$#" -lt 1 ]; then
+    echo "Usage: $0 <boost-unit-test-executable> [arguments]" 1>&2
     exit 1
 fi
 
@@ -15,16 +15,32 @@ fi
 
 if [ "$BOOST_VERSION" = "" -o "$BOOST_VERSION" -lt 105900 ]; then
     echo "Boost version '$BOOST_VERSION' - executing tests serially"
-    "$1"
+    "$@"
+elif ! command -v parallel >/dev/null 2>&1; then
+    echo "Can not find the 'parallel' command - executing tests serially"
+    "$@"
 else
+  echo "=== $1 list_content test begin ==="
+  "$1" --list_content 2>&1 \
+    | grep '\*$' \
+    | sed 's=\*$==;s=^    =/='
+  echo "=== $1 list_content test end ==="
   "$1" --list_content 2>&1 \
     | grep '\*$' \
     | sed 's=\*$==;s=^    =/=' \
-    | while read t; do
-	case "$t" in
-	/*) echo "$pre$t"; ;;
-	*) pre="$t"; ;;
-	esac
-      done \
-    | parallel echo Running {}\; "$1" -t {}
+    | (while read t; do
+        case "$t" in
+        /*) echo "$pre$t"; found=1; ;;
+        *) if [ -n "$pre" -a "$found" = "0" ]; then
+              echo "$pre"
+           fi
+           pre="$t"
+           found=0
+           ;;
+        esac
+      done
+      if [ -n "$pre" -a "$found" = "0" ]; then
+        echo "$pre"
+      fi) \
+    | parallel echo Running {}\; "$@" -t {}
 fi

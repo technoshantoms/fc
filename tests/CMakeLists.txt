@@ -16,6 +16,12 @@ target_link_libraries( hmac_test fc )
 add_executable( ecc_test crypto/ecc_test.cpp )
 target_link_libraries( ecc_test fc )
 
+add_executable( ws_test_server ws_test_server.cpp )
+target_link_libraries( ws_test_server fc )
+
+add_executable( ws_test_client ws_test_client.cpp )
+target_link_libraries( ws_test_client fc )
+
 #add_executable( test_aes aes_test.cpp )
 #target_link_libraries( test_aes fc ${rt_library} ${pthread_library} )
 #add_executable( test_sleep sleep.cpp )
@@ -26,6 +32,7 @@ target_link_libraries( ecc_test fc )
 add_executable( all_tests all_tests.cpp
                           compress/compress.cpp
                           crypto/aes_test.cpp
+                          crypto/array_initialization_test.cpp
                           crypto/base_n_tests.cpp
                           crypto/bigint_test.cpp
                           crypto/blind.cpp
@@ -36,12 +43,14 @@ add_executable( all_tests all_tests.cpp
                           io/stream_tests.cpp
                           io/tcp_test.cpp
                           io/varint_tests.cpp
+                          network/ip_tests.cpp
                           network/http/websocket_test.cpp
                           thread/task_cancel.cpp
                           thread/thread_tests.cpp
                           thread/parallel_tests.cpp
                           bloom_test.cpp
                           reflection_tests.cpp
+                          safe_tests.cpp
                           serialization_test.cpp
                           stacktrace_test.cpp
                           time_test.cpp

@@ -1,4 +1,4 @@
-/** This source adapted from https://github.com/kmicklas/variadic-static_variant. Now available at https://github.com/kmicklas/variadic-variant.
+/* This source is adapted from https://github.com/kmicklas/variadic-variant .
  *
  * Copyright (C) 2013 Kenneth Micklas
  *
@@ -74,8 +74,10 @@ protected:
 
     void init_from_tag(tag_type tag)
     {
-        FC_ASSERT( tag >= 0 );
-        FC_ASSERT( tag < count() );
+        FC_ASSERT( tag >= 0, "Unable to init with a negative tag '${tag}'", ("tag",tag) );
+        FC_ASSERT( static_cast<size_t>(tag) < count(),
+                   "Unable to init with tag '${tag}' when the number of supported tags is ${count}",
+                   ("tag",tag) ("count",count()) );
         _tag = tag;
         typelist::runtime::dispatch(list(), tag, [this](auto t) {
             using T = typename decltype(t)::type;
@@ -118,7 +120,7 @@ public:
     template<typename X, typename = type_in_typelist<X>>
     struct tag
     {
-       static constexpr int value = typelist::index_of<list, X>();
+       static constexpr tag_type value = typelist::index_of<list, X>();
     };
 
     struct type_lt {
@@ -235,7 +237,9 @@ public:
         if(_tag == typelist::index_of<list, X>()) {
             return *reinterpret_cast<X*>(storage.data());
         } else {
-            FC_THROW_EXCEPTION( fc::assert_exception, "static_variant does not contain a value of type ${t}", ("t",fc::get_typename<X>::name()) );
+            FC_THROW_EXCEPTION( fc::assert_exception,
+                                "static_variant does not contain a value of type ${t}",
+                                ("t",fc::get_typename<X>::name()) );
         }
     }
     template<typename X, typename = type_in_typelist<X>>
@@ -243,91 +247,96 @@ public:
         if(_tag == typelist::index_of<list, X>()) {
             return *reinterpret_cast<const X*>(storage.data());
         } else {
-            FC_THROW_EXCEPTION( fc::assert_exception, "static_variant does not contain a value of type ${t}", ("t",fc::get_typename<X>::name()) );
+            FC_THROW_EXCEPTION( fc::assert_exception,
+                                "static_variant does not contain a value of type ${t}",
+                                ("t",fc::get_typename<X>::name()) );
         }
     }
     template<typename visitor>
-    auto visit(visitor& v) {
+    typename visitor::result_type visit(visitor& v) {
         return visit( _tag, v, (void*) storage.data() );
     }
 
     template<typename visitor>
-    auto visit(const visitor& v) {
+    typename visitor::result_type visit(const visitor& v) {
         return visit( _tag, v, (void*) storage.data() );
     }
 
     template<typename visitor>
-    auto visit(visitor& v)const {
+    typename visitor::result_type visit(visitor& v)const {
         return visit( _tag, v, (const void*) storage.data() );
     }
 
     template<typename visitor>
-    auto visit(const visitor& v)const {
+    typename visitor::result_type visit(const visitor& v)const {
         return visit( _tag, v, (const void*) storage.data() );
     }
 
     template<typename visitor>
-    static auto visit( tag_type tag, visitor& v, void* data )
+    static typename visitor::result_type visit( tag_type tag, visitor& v, void* data )
     {
-        FC_ASSERT( tag >= 0 && tag < count(), "Unsupported type ${tag}!", ("tag",tag) );
+        FC_ASSERT( tag >= 0 && static_cast<size_t>(tag) < count(),
+                   "Unsupported type '${tag}', the number of supported types is ${count}! ",
+                   ("tag",tag) ("count",count()) );
         return typelist::runtime::dispatch(list(), tag, [&v, data](auto t) {
             return v(*reinterpret_cast<typename decltype(t)::type*>(data));
         });
     }
 
     template<typename visitor>
-    static auto visit( tag_type tag, const visitor& v, void* data )
+    static typename visitor::result_type visit( tag_type tag, const visitor& v, void* data )
     {
-        FC_ASSERT( tag >= 0 && tag < count(), "Unsupported type ${tag}!", ("tag",tag) );
+        FC_ASSERT( tag >= 0 && static_cast<size_t>(tag) < count(),
+                   "Unsupported type '${tag}', the number of supported types is ${count}! ",
+                   ("tag",tag) ("count",count()) );
         return typelist::runtime::dispatch(list(), tag, [&v, data](auto t) {
             return v(*reinterpret_cast<typename decltype(t)::type*>(data));
         });
     }
 
     template<typename visitor>
-    static auto visit( tag_type tag, visitor& v, const void* data )
+    static typename visitor::result_type visit( tag_type tag, visitor& v, const void* data )
     {
-        FC_ASSERT( tag >= 0 && tag < count(), "Unsupported type ${tag}!", ("tag",tag) );
+        FC_ASSERT( tag >= 0 && static_cast<size_t>(tag) < count(),
+                   "Unsupported type '${tag}', the number of supported types is ${count}! ",
+                   ("tag",tag) ("count",count()) );
         return typelist::runtime::dispatch(list(), tag, [&v, data](auto t) {
             return v(*reinterpret_cast<const typename decltype(t)::type*>(data));
         });
     }
 
     template<typename visitor>
-    static auto visit( tag_type tag, const visitor& v, const void* data )
+    static typename visitor::result_type visit( tag_type tag, const visitor& v, const void* data )
     {
-        FC_ASSERT( tag >= 0 && tag < count(), "Unsupported type ${tag}!", ("tag",tag) );
+        FC_ASSERT( tag >= 0 && static_cast<size_t>(tag) < count(),
+                   "Unsupported type '${tag}', the number of supported types is ${count}! ",
+                   ("tag",tag) ("count",count()) );
         return typelist::runtime::dispatch(list(), tag, [&v, data](auto t) {
             return v(*reinterpret_cast<const typename decltype(t)::type*>(data));
         });
     }
 
-    static constexpr int count() { return typelist::length<list>(); }
-    void set_which( tag_type w ) {
-      FC_ASSERT( w >= 0 );
-      FC_ASSERT( w < count() );
+    static constexpr size_t count() { return typelist::length<list>(); }
+    void set_which( tag_type tag ) {
+      FC_ASSERT( tag >= 0, "Unable to set a negative tag '${tag}'", ("tag",tag) );
+      FC_ASSERT( static_cast<size_t>(tag) < count(),
+                 "Unable to set tag '${tag}' when the number of supported tags is ${count}",
+                 ("tag",tag) ("count",count()) );
       clean();
-      init_from_tag(w);
+      init_from_tag(tag);
     }
 
     tag_type which() const {return _tag;}
-    const char* content_typename() const {
-       return typelist::runtime::dispatch(list(), _tag, [](auto t) {
-          return get_typename<typename decltype(t)::type>::name();
-       });
-    }
 
     template<typename T>
     bool is_type() const { return _tag == tag<T>::value; }
-
-    template<typename T>
-    static constexpr bool can_store() { return typelist::contains<list, T>(); }
 };
 template<> class static_variant<> {
 public:
     using tag_type = int64_t;
     static_variant() { FC_THROW_EXCEPTION(assert_exception, "Cannot create static_variant with no types"); }
 };
+template<typename... Types> class static_variant<typelist::list<Types...>> : public static_variant<Types...> {};
 
    struct from_static_variant 
    {
