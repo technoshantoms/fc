@@ -373,8 +373,7 @@ namespace fc
 /**
  *  @def FC_THROW_EXCEPTION( EXCEPTION, FORMAT, ... )
  *  @param EXCEPTION a class in the Phoenix::Athena::API namespace that inherits
- *  @param FORMAT a const char* string with "${keys}"
- *  @param ... other parameters
+ *  @param format - a const char* string with "${keys}"
  */
 #define FC_THROW_EXCEPTION( EXCEPTION, FORMAT, ... ) \
   FC_MULTILINE_MACRO_BEGIN \

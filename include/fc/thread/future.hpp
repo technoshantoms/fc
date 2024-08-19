@@ -3,9 +3,9 @@
 #include <fc/exception/exception.hpp>
 #include <fc/thread/spin_yield_lock.hpp>
 #include <fc/optional.hpp>
-
-#include <atomic>
 #include <memory>
+
+#include <boost/atomic.hpp>
 
 //#define FC_TASK_NAMES_ARE_MANDATORY 1
 #ifdef FC_TASK_NAMES_ARE_MANDATORY
@@ -77,22 +77,23 @@ namespace fc {
 
       void _wait( const microseconds& timeout_us );
       void _wait_until( const time_point& timeout_us );
+      void _enqueue_thread();
+      void _dequeue_thread();
       void _notify();
+      void _set_timeout();
       void _set_value(const void* v);
 
       void _on_complete( detail::completion_handler* c );
 
     private:
-      void _enqueue_thread();
-      void _dequeue_thread();
-
       friend class  thread;
       friend struct context;
       friend class  thread_d;
 
-      std::atomic<bool>           _ready;
-      std::atomic<thread*>        _blocked_thread;
-      std::atomic<int32_t>        _blocked_fiber_count;
+      bool                        _ready;
+      mutable spin_yield_lock     _spin_yield;
+      thread*                     _blocked_thread;
+      unsigned                    _blocked_fiber_count;
       time_point                  _timeout;
       fc::exception_ptr           _exceptp;
       bool                        _canceled;
@@ -102,7 +103,7 @@ namespace fc {
     private:
 #endif
       const char*                   _desc;
-      std::atomic<detail::completion_handler*> _compl;
+      detail::completion_handler*   _compl;
   };
 
   template<typename T = void> 

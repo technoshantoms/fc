@@ -34,7 +34,7 @@ namespace fc
 {
    /**
     * @defgroup serializable Serializable _types
-    * @brief Classes that may be converted to/from an variant
+    * @brief Clas_ses that may be converted to/from an variant
     *
     * To make a class 'serializable' the following methods must be available 
     * for your Serializable_type
@@ -111,10 +111,10 @@ namespace fc
    template<typename K, typename T, typename... A>
    void from_variant(const variant& var, flat_map<K, T, A...>& vo, uint32_t max_depth );
 
-   template<typename K, typename... T>
-   void to_variant( const std::map<K, T...>& var,   variant& vo, uint32_t max_depth );
-   template<typename K, typename T, typename... A>
-   void from_variant( const variant& var, std::map<K, T, A...>& vo, uint32_t max_depth );
+   template<typename K, typename T>
+   void to_variant( const std::map<K,T>& var,   variant& vo, uint32_t max_depth );
+   template<typename K, typename T>
+   void from_variant( const variant& var, std::map<K,T>& vo, uint32_t max_depth );
    template<typename K, typename T>
    void to_variant( const std::multimap<K,T>& var,   variant& vo, uint32_t max_depth );
    template<typename K, typename T>
@@ -217,7 +217,6 @@ namespace fc
         variant( std::nullptr_t, uint32_t max_depth = 1 );
 
         /// @param str - UTF8 string
-        /// @param max_depth - the maximum depth to recurse into
         variant( const char* str, uint32_t max_depth = 1 );
         variant( char* str, uint32_t max_depth = 1 );
         variant( wchar_t* str, uint32_t max_depth = 1 );
@@ -445,8 +444,8 @@ namespace fc
       for( const auto& item : vars )
          vo.insert( item.as< std::pair<K,T> >( max_depth - 1 ) );
    }
-   template<typename K, typename... T>
-   void to_variant( const std::map<K, T...>& var, variant& vo, uint32_t max_depth )
+   template<typename K, typename T>
+   void to_variant( const std::map<K, T>& var, variant& vo, uint32_t max_depth )
    {
       _FC_ASSERT( max_depth > 0, "Recursion depth exceeded!" );
       std::vector< variant > vars(var.size());
@@ -455,13 +454,13 @@ namespace fc
          vars[i++] = fc::variant( key_value, max_depth - 1 );
       vo = vars;
    }
-   template<typename K, typename T, typename... A>
-   void from_variant( const variant& var, std::map<K, T, A...>& vo, uint32_t max_depth )
+   template<typename K, typename T>
+   void from_variant( const variant& var, std::map<K, T>& vo, uint32_t max_depth )
    {
       _FC_ASSERT( max_depth > 0, "Recursion depth exceeded!" );
       const variants& vars = var.get_array();
       vo.clear();
-      for( const auto& item : vars )
+      for( auto item : vars )
          vo.insert( item.as< std::pair<K,T> >( max_depth - 1 ) );
    }
 
@@ -582,7 +581,9 @@ namespace fc
       memset( this, 0, sizeof(*this) );
       to_variant( val, *this, max_depth );
    }
-
+   #ifdef __APPLE__
+   inline void to_variant( size_t s, variant& v, uint32_t max_depth ) { v = variant(uint64_t(s)); }
+   #endif
    template<typename T>
    void to_variant( const std::shared_ptr<T>& var, variant& vo, uint32_t max_depth )
    {
@@ -704,4 +705,4 @@ namespace fc
 #include <fc/reflect/reflect.hpp>
 FC_REFLECT_TYPENAME( fc::variant )
 FC_REFLECT_ENUM( fc::variant::type_id, (null_type)(int64_type)(uint64_type)(double_type)(bool_type)(string_type)(array_type)(object_type)(blob_type) )
-FC_REFLECT( fc::blob, (data) )
+FC_REFLECT( fc::blob, (data) );

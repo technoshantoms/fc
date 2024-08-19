@@ -134,7 +134,7 @@ fc::tcp_socket& connection::get_socket()const {
 
 http::request    connection::read_request()const {
   http::request req;
-  req.remote_endpoint = std::string(get_socket().remote_endpoint());
+  req.remote_endpoint = fc::variant(get_socket().remote_endpoint()).as_string();
   std::vector<char> line(1024*8);
   int s = my->read_until( line.data(), line.data()+line.size(), ' ' ); // METHOD
   req.method = line.data();
@@ -185,7 +185,7 @@ std::vector<header> parse_urlencoded_params( const std::string& f ) {
   std::vector<header> h(num_args);
   int arg = 0;
   for( size_t i = 0; i < f.size(); ++i ) {
-    while( i < f.size() && f[i] != '=' ) {
+    while( f[i] != '=' && i < f.size() ) {
       if( f[i] == '%' ) { 
         h[arg].key += char((fc::from_hex(f[i+1]) << 4) | fc::from_hex(f[i+2]));
         i += 3;

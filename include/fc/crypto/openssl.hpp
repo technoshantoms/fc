@@ -1,7 +1,6 @@
 #pragma once
 #include <openssl/ec.h>
 #include <openssl/crypto.h>
-#include <openssl/dh.h>
 #include <openssl/evp.h>
 #include <openssl/conf.h>
 #include <openssl/err.h>
@@ -22,8 +21,6 @@ namespace fc
     struct ssl_wrapper
     {
         ssl_wrapper(ssl_type* obj):obj(obj) {}
-        ssl_wrapper( ssl_wrapper& copy ) = delete;
-        ssl_wrapper& operator=( ssl_wrapper& copy ) = delete;
 
         operator ssl_type*() { return obj; }
         operator const ssl_type*() const { return obj; }
@@ -33,21 +30,23 @@ namespace fc
         ssl_type* obj;
     };
 
-    #define SSL_TYPE_DECL(name, ssl_type) \
+    #define SSL_TYPE(name, ssl_type, free_func) \
         struct name  : public ssl_wrapper<ssl_type> \
         { \
-            name( ssl_type* obj=nullptr ); \
-            name( name&& move ); \
-            ~name(); \
-            name& operator=( name&& move ); \
+            name(ssl_type* obj=nullptr) \
+              : ssl_wrapper(obj) {} \
+            ~name() \
+            { \
+                if( obj != nullptr ) \
+                free_func(obj); \
+            } \
         };
 
-    SSL_TYPE_DECL(ec_group,       EC_GROUP)
-    SSL_TYPE_DECL(ec_point,       EC_POINT)
-    SSL_TYPE_DECL(ecdsa_sig,      ECDSA_SIG)
-    SSL_TYPE_DECL(bn_ctx,         BN_CTX)
-    SSL_TYPE_DECL(evp_cipher_ctx, EVP_CIPHER_CTX)
-    SSL_TYPE_DECL(ssl_dh,         DH)
+    SSL_TYPE(ec_group,       EC_GROUP,       EC_GROUP_free)
+    SSL_TYPE(ec_point,       EC_POINT,       EC_POINT_free)
+    SSL_TYPE(ecdsa_sig,      ECDSA_SIG,      ECDSA_SIG_free)
+    SSL_TYPE(bn_ctx,         BN_CTX,         BN_CTX_free)
+    SSL_TYPE(evp_cipher_ctx, EVP_CIPHER_CTX, EVP_CIPHER_CTX_free )
 
     /** allocates a bignum by default.. */
     struct ssl_bignum : public ssl_wrapper<BIGNUM>

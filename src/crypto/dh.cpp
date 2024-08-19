@@ -1,9 +1,12 @@
 #include <fc/crypto/dh.hpp>
+#include <openssl/dh.h>
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 #endif
 
 namespace fc {
+    SSL_TYPE(ssl_dh, DH, DH_free)
+
     static bool validate( const ssl_dh& dh, bool& valid ) {
         int check;
         DH_check(dh,&check);
@@ -33,7 +36,7 @@ namespace fc {
    {
         if( !p.size() ) 
             return valid = false;
-        ssl_dh dh(DH_new());
+        ssl_dh dh = DH_new();
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
         const auto bn_p = BN_bin2bn( (unsigned char*)&p.front(), p.size(), NULL );
         const auto bn_g = BN_bin2bn( (unsigned char*)&g, 1, NULL );
@@ -49,7 +52,7 @@ namespace fc {
    {
         if( !p.size() ) 
             return valid = false;
-        ssl_dh dh(DH_new());
+        ssl_dh dh = DH_new();
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
         const auto bn_p = BN_bin2bn( (unsigned char*)&p.front(), p.size(), NULL );
         const auto bn_g = BN_bin2bn( (unsigned char*)&g, 1, NULL );
@@ -87,7 +90,7 @@ namespace fc {
         return true;
    }
    bool diffie_hellman::compute_shared_key( const char* buf, uint32_t s ) {
-        ssl_dh dh(DH_new());
+        ssl_dh dh = DH_new();
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
         auto bn_p = BN_bin2bn( (unsigned char*)&p.front(), p.size(), NULL );
         auto bn_pub_key = BN_bin2bn( (unsigned char*)&pub_key.front(), pub_key.size(), NULL );

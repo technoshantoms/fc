@@ -4,8 +4,6 @@
 #include <fc/fwd.hpp>
 #include <type_traits>
 
-#include <boost/atomic.hpp>
-
 namespace fc {
   struct context;
   class spin_lock;

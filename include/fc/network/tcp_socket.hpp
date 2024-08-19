@@ -3,9 +3,6 @@
 #include <fc/io/iostream.hpp>
 #include <fc/time.hpp>
 
-#include <fc/asio.hpp>
-#include <fc/thread/future.hpp>
-
 namespace fc {
   namespace ip { class endpoint; }
 
@@ -15,9 +12,7 @@ namespace fc {
   {
     public:
       tcp_socket();
-      tcp_socket( tcp_socket& copy ) = delete;
       ~tcp_socket();
-      tcp_socket& operator=( tcp_socket& copy ) = delete;
 
       void     connect_to( const fc::ip::endpoint& remote_endpoint );
       void     bind( const fc::ip::endpoint& local_endpoint );
@@ -55,14 +50,11 @@ namespace fc {
     private:
       friend class tcp_server;
       class impl;
-      fc::fwd<impl,
-        sizeof(void* /*vtable*/) +
-        sizeof(fc::future<size_t>) +
-        sizeof(fc::future<size_t>) +
-        sizeof(boost::asio::ip::tcp::socket) +
-        sizeof(tcp_socket_io_hooks*)
-      > my;
-
+      #ifdef _WIN64
+      fc::fwd<impl,0xa8> my;
+      #else
+      fc::fwd<impl,0x60> my;
+      #endif
   };
   typedef std::shared_ptr<tcp_socket> tcp_socket_ptr;
 

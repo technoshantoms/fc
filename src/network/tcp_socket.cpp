@@ -173,7 +173,7 @@ namespace fc {
 
   void tcp_socket::enable_keep_alives(const fc::microseconds& interval)
   {
-    if (interval.count() > 0)
+    if (interval.count())
     {
       boost::asio::socket_base::keep_alive option(true);
       my->_sock.set_option(option);
