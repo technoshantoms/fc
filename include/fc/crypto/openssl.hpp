@@ -49,12 +49,20 @@ namespace fc
     SSL_TYPE(bn_ctx,         BN_CTX,         BN_CTX_free)
     SSL_TYPE(evp_cipher_ctx, EVP_CIPHER_CTX, EVP_CIPHER_CTX_free )
     SSL_TYPE(ec_key,         EC_KEY,         EC_KEY_free)
-
     /** allocates a bignum by default.. */
     struct ssl_bignum : public ssl_wrapper<BIGNUM>
     {
         ssl_bignum() : ssl_wrapper(BN_new()) {}
         ~ssl_bignum() { BN_free(obj); }
     };
+
+    /** Allows to explicitly specify OpenSSL configuration file path to be loaded at OpenSSL library init.
+        If not set OpenSSL will try to load the conf. file (openssl.cnf) from the path it was
+        configured with what caused serious Keyhotee startup bugs on some Win7, Win8 machines.
+        \warning to be effective this method should be used before any part using OpenSSL, especially
+        before init_openssl call
+    */
+    void store_configuration_path(const path& filePath);
+    int init_openssl();
 
 } // namespace fc

@@ -1,6 +1,10 @@
 #pragma once
+#include <boost/endian/buffers.hpp>
 #include <fc/fwd.hpp>
-#include <fc/string.hpp>
+#include <fc/io/raw_fwd.hpp>
+
+#include <functional>
+#include <string>
 
 namespace fc{
 
@@ -8,25 +12,24 @@ class sha1
 {
   public:
     sha1();
-    explicit sha1( const string& hex_str );
+    explicit sha1( const std::string& hex_str );
 
-    string str()const;
-    operator string()const;
+    std::string str()const;
+    operator    std::string()const;
 
-    char*       data();
-    const char* data()const;
-    size_t data_size()const { return 20; }
+    char*    data()const;
+    static constexpr size_t data_size() { return 20; }
 
     static sha1 hash( const char* d, uint32_t dlen );
-    static sha1 hash( const string& );
+    static sha1 hash( const std::string& );
 
     template<typename T>
     static sha1 hash( const T& t ) 
-    { 
+    {
       sha1::encoder e; 
-      e << t; 
+      raw::pack(e, t);
       return e.result(); 
-    } 
+    }
 
     class encoder 
     {
@@ -63,12 +66,26 @@ class sha1
     friend bool   operator >  ( const sha1& h1, const sha1& h2 ); 
     friend bool   operator <  ( const sha1& h1, const sha1& h2 ); 
                              
-    uint32_t _hash[5]; 
+    boost::endian::little_uint32_buf_t _hash[5];
 };
 
+namespace raw {
+
+   template<typename T>
+   inline void pack( T& ds, const sha1& ep, uint32_t _max_depth ) {
+      ds << ep;
+   }
+
+   template<typename T>
+   inline void unpack( T& ds, sha1& ep, uint32_t _max_depth ) {
+      ds >> ep;
+   }
+
+}
+
   class variant;
-  void to_variant( const sha1& bi, variant& v );
-  void from_variant( const variant& v, sha1& bi );
+  void to_variant( const sha1& bi, variant& v, uint32_t max_depth );
+  void from_variant( const variant& v, sha1& bi, uint32_t max_depth );
 
 } // namespace fc
 
@@ -83,3 +100,6 @@ namespace std
        }
     };
 }
+
+#include <fc/reflect/reflect.hpp>
+FC_REFLECT_TYPENAME( fc::sha1 )
